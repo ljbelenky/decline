@@ -36,35 +36,28 @@ class Decline_Generator():
         self.data = data
 
 if __name__ == '__main__':
-    data = Decline_Generator(drops = (10,15), noise = 20, highpoints = (40,20), lowpoints = (40,20)).data
+    data = Decline_Generator(drops = (10,15), noise = 8, highpoints = (40,20), lowpoints = (10,20)).data
 
     X = data.copy()
     X['production'] = np.log(X['production'])
 
-    # '''Add Delta Columns for differences''' 
-    # for i in range(-4,5):
-    #     X['delta{}'.format(i)] = X.production.diff(i)
+    '''Add Delta Columns for differences''' 
+    for i in range(-4,5):
+        X['delta{}'.format(i)] = X.production.diff(i)
 
-    for i in [1,2,4,8,16,32]:
-        rolling = X.production.rolling(window=1).mean()
-        X['delta_rolling_{}'.format(i)] = X.production - rolling#.shift(i)
+    X['days_ago'] = (X['date'].max()-X['date']).dt.days
+    X['epsilon'] = X['days_ago']/X['production']
 
-    days_ago = (X['date'].max()-X['date']).dt.days
-    X['epsilon'] = days_ago/(X['production']-X['production'].iloc[-10:].mean())
-
-    X = X.drop(['date'], axis = 1).reset_index()
+    X = X.drop(['date','days_ago'], axis = 1).reset_index()
     X = X.dropna()
     indices = X['index']
     X.drop('index',axis = 1, inplace = True)
 
-    X = PCA(n_components = int(len(X.columns)/2), whiten = True).fit_transform(X)
+    X = PCA(n_components = int(len(X.columns)/1.5), whiten = True).fit_transform(X)
     labels = KMeans(n_clusters = 5).fit(X).predict(X)
     data['labels'] = -1
     data['labels'].iloc[indices] = labels
     data = data[data['labels']>=0]
-
-    colors = {0:'red',1:'green',2:'blue',3:'yellow',4:'orange',5:'black',6:'magenta'}
-    data['labels'] = data['labels'].map(lambda c:colors[c])
 
     majority_class = data.groupby('labels').count().sort_values('date').index[-1]
     majority = data[data['labels']==majority_class].drop('labels', axis = 1)
@@ -85,5 +78,5 @@ if __name__ == '__main__':
 
     plt.plot(prediction_dates, predictions, color = 'green')
     plt.plot(data.set_index('date')['production'], alpha = .2)
-    plt.scatter(data['date'], data['production'], c = data.labels)
+    plt.scatter(data['date'], data['production'])
     plt.show()
