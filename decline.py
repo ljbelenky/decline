@@ -1,3 +1,5 @@
+# https://blog.goodaudience.com/introduction-to-1d-convolutional-neural-networks-in-keras-for-time-sequences-3a7ff801a2cf
+
 import pandas as pd 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -5,7 +7,7 @@ from sklearn.linear_model import LinearRegression as LR
 import random
 from sklearn.model_selection import train_test_split
 from keras.models import Sequential
-from keras.layers import Conv1D, Dense
+from keras.layers import Conv1D, Dense, Reshape
 
 
 
@@ -49,9 +51,10 @@ class Decline_Generator():
 if __name__ == '__main__':
 
     Xs, ys = [], []
-
-    for i in range(10):
+    batch_size = 100
+    for i in range(batch_size):
         initial = np.random.uniform(1000)
+        initial = 1000
         decline_rate = np.random.uniform(.995, .9999)
         drops = {'num':np.random.randint(15), 'max_length':np.random.randint(1,20)}
         noise = np.random.uniform(16)
@@ -64,28 +67,50 @@ if __name__ == '__main__':
         ys.append(y)
 
     data = pd.DataFrame(Xs)
-    data['target'] = ys
+    target = ys
 
-    data.transpose().plot()
-    plt.show()
-
-    X_train, X_test, y_train, y_test = train_test_split(data.iloc[:,:-1], data.iloc[:,-1])
-
-    model = LR().fit(X_train, y_train)
-    print(model.score(X_train, y_train))
-    print(model.score(X_test, y_test))
-
-    # plt.scatter(y_train, model.predict(X_train))
-    # plt.scatter(y_test, model.predict(X_test))
+    # data.transpose().plot()
     # plt.show()
 
-    model_m = Sequential()
-    model_m.add(Conv1D(100, 10, activation='relu', input_shape=(None, X_train.shape[1])))
-    model_m.add(Conv1D(100, 10, activation='relu'))
-    model_m.add(Conv1D(160, 10, activation='relu'))
-    model_m.add(Conv1D(160, 10, activation='relu'))
-    model_m.add(Dense(1, activation='linear'))
-    print(model_m.summary())
-    model_m.compile(optimizer = 'adam', loss = 'mean_squared_error')
-    model_m.fit(X_train,y_train)
+    X_train, X_test, y_train, y_test = train_test_split(data, target)
+    X_train = np.expand_dims(X_train, axis=2)
+    X_test = np.expand_dims(X_test, axis =2)
+    # y_train = y_train.values.reshape(len(y_train), 1)
+    # y_test = y_test.values.reshape(len(y_test), 1)
+
+
+    # model = Sequential()
+    # # model_m.add(Reshape((TIME_PERIODS, num_sensors), input_shape=(input_shape,)))
+    # model.add(Conv1D(100, 10, activation='relu', input_shape=(256,1)))
+    # model.add(Conv1D(100, 10, activation='relu'))
+    # model.add(Conv1D(160, 10, activation='relu'))
+    # model.add(Conv1D(160, 10, activation='relu'))
+    # model.add(Dense(1, activation='linear'))
+    # print(model.summary())
+    # model.compile(optimizer = 'adam', loss = 'mean_squared_error')
+    # model.fit(X_train,y_train)
     
+
+    from keras.models import Sequential
+    from keras.layers import Dense, Dropout
+    from keras.layers import Embedding
+    from keras.layers import Conv1D, GlobalAveragePooling1D, MaxPooling1D
+
+    seq_length = 256
+
+    model = Sequential()
+    model.add(Conv1D(100, 16, activation='relu', input_shape=(seq_length, 1)))
+    model.add(Conv1D(50, 8, activation='relu'))
+    model.add(MaxPooling1D(3))
+    model.add(Conv1D(50, 4, activation='relu'))
+    model.add(Conv1D(25, 2, activation='relu'))
+    model.add(GlobalAveragePooling1D())
+    # model.add(Dropout(0.5))
+    model.add(Dense(1, activation='linear'))
+
+    model.compile(loss='mean_squared_error',
+                optimizer='adam')
+
+    model.fit(X_train, y_train, epochs=5000, batch_size = batch_size)
+    score = model.evaluate(X_test, y_test)
+    print(score**.5)
