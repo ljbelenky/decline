@@ -8,7 +8,7 @@ from sklearn.linear_model import LinearRegression as LR
 class Decline_Generator():
     '''This class creates synthetic gas production data with dropouts, low point, high points and noise.
     Return data is a pandas dataframe with columns "date" and "production'''
-    def __init__(self, n = 366, drops = (0,0), 
+    def __init__(self, n = 365*2, drops = (0,0), 
     noise = 0, highpoints = (0,0), lowpoints = (0,0), decline_rate = .996):
         dates = pd.date_range(start = '2018-01-01', end = '2019-01-01', periods = n)
         x = 100
@@ -36,7 +36,10 @@ class Decline_Generator():
         self.data = data
 
 if __name__ == '__main__':
-    data = Decline_Generator(drops = (10,15), noise = 8, highpoints = (40,20), lowpoints = (10,20)).data
+    data = Decline_Generator(drops = (25,25), noise = 5, highpoints = (45,20), lowpoints = (25,20)).data
+
+    plt.scatter(data['date'],data['production'])
+    plt.show()
 
     X = data.copy()
     X['production'] = np.log(X['production'])
@@ -54,7 +57,7 @@ if __name__ == '__main__':
     X.drop('index',axis = 1, inplace = True)
 
     X = PCA(n_components = int(len(X.columns)/1.5), whiten = True).fit_transform(X)
-    labels = KMeans(n_clusters = 5).fit(X).predict(X)
+    labels = KMeans(n_clusters =6).fit(X).predict(X)
     data['labels'] = -1
     data['labels'].iloc[indices] = labels
     data = data[data['labels']>=0]
@@ -78,5 +81,11 @@ if __name__ == '__main__':
 
     plt.plot(prediction_dates, predictions, color = 'green')
     plt.plot(data.set_index('date')['production'], alpha = .2)
-    plt.scatter(data['date'], data['production'])
+    # plt.scatter(data['date'], data['production'])
+
+    for label in data['labels'].unique():
+        l = data[data['labels'] == label]
+        plt.scatter(l['date'], l['production'])
+
+
     plt.show()
