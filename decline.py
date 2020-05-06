@@ -38,7 +38,10 @@ class Decline_Generator():
 if __name__ == '__main__':
     data = Decline_Generator(drops = (25,25), noise = 5, highpoints = (45,20), lowpoints = (25,20)).data
 
-    plt.scatter(data['date'],data['production'])
+    # data = Decline_Generator().data
+
+    plt.plot(data['date'],data['production'])
+    plt.ylabel('Production')   
     plt.show()
 
     X = data.copy()
