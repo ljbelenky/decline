@@ -34,4 +34,4 @@ We show how unsupervised learning can be used along with supervised learning and
 
 ![results](images/results.png)
 
-See [Production Modeling.ipynb](Production Modeling.ipynb) for example code.
+See Production Modeling.ipynb for example code.
